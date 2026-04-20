@@ -1,5 +1,5 @@
 {
-	"node": "n8n-nodes-readability.readability",
+	"node": "n8n-nodes-reader-view.readability",
 	"nodeVersion": "1.0",
 	"codexVersion": "1.0",
 	"categories": ["Miscellaneous", "Content"],

@@ -167,7 +167,7 @@ export class Readability implements INodeType {
 						name: 'userAgent',
 						type: 'string',
 						default:
-							'Mozilla/5.0 (compatible; n8n-nodes-readability/0.1; +https://github.com/AronStankovics/n8n-nodes-readability)',
+							'Mozilla/5.0 (compatible; n8n-nodes-reader-view/0.1; +https://github.com/AronStankovics/n8n-nodes-readability)',
 						description: 'User-Agent header sent when fetching a URL',
 					},
 				],
@@ -204,7 +204,7 @@ export class Readability implements INodeType {
 						headers: {
 							'User-Agent':
 								options.userAgent ??
-								'Mozilla/5.0 (compatible; n8n-nodes-readability/0.1)',
+								'Mozilla/5.0 (compatible; n8n-nodes-reader-view/0.1)',
 							Accept: 'text/html,application/xhtml+xml,*/*;q=0.8',
 						},
 						timeout: options.timeoutMs ?? 15000,

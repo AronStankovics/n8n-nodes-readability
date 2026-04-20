@@ -1,4 +1,4 @@
-# n8n-nodes-readability
+# n8n-nodes-reader-view
 
 n8n community node that extracts the readable article (title, byline, main content, excerpt, etc.) from a URL or HTML, using [Mozilla Readability](https://github.com/mozilla/readability) — the same engine behind Firefox Reader View.
 
@@ -7,7 +7,7 @@ Useful for RSS pipelines, AI summarisation, newsletter digests, and any workflow
 ## Install
 
 **Self-hosted n8n**
-Settings → Community Nodes → **Install** → `n8n-nodes-readability`.
+Settings → Community Nodes → **Install** → `n8n-nodes-reader-view`.
 
 **n8n Cloud**
 Community nodes on Cloud must go through n8n's verification process. See [Publish for verification](https://docs.n8n.io/integrations/creating-nodes/deploy/submit-community-nodes/). Once published to npm and submitted, verified users can install it from the Cloud node panel.
