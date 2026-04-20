@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-reader-view",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "n8n community node that extracts the readable article (title, byline, main content) from a URL or HTML using Mozilla Readability — the same engine behind Firefox Reader View.",
   "license": "MIT",
   "homepage": "https://github.com/AronStankovics/n8n-nodes-readability",

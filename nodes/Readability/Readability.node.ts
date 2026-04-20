@@ -42,16 +42,14 @@ function outerVideoContainer(el: Element): Element {
 	return node;
 }
 
-function buildQrReplacement(doc: Document, svgMarkup: string, url: string): Element {
-	const wrapper = doc.createElement('figure');
+function buildQrReplacement(doc: Document, svgMarkup: string): Element {
+	const wrapper = doc.createElement('p');
 	wrapper.setAttribute('class', 'qr-for-video');
+	wrapper.setAttribute('style', 'text-align: center');
 	const temp = doc.createElement('div');
 	temp.innerHTML = svgMarkup;
 	const svg = temp.querySelector('svg');
 	if (svg) wrapper.appendChild(svg);
-	const caption = doc.createElement('figcaption');
-	caption.textContent = `Scan to watch: ${url}`;
-	wrapper.appendChild(caption);
 	return wrapper;
 }
 
@@ -406,9 +404,9 @@ export class Readability implements INodeType {
 									type: 'svg',
 									errorCorrectionLevel: 'M',
 									margin: 1,
-									width: 256,
+									width: 128,
 								});
-								target.parentNode.replaceChild(buildQrReplacement(doc, qrSvg, url), target);
+								target.parentNode.replaceChild(buildQrReplacement(doc, qrSvg), target);
 							}
 						}
 					}
