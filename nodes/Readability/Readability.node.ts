@@ -177,19 +177,19 @@ export class Readability implements INodeType {
 						],
 					},
 					{
-						displayName: 'Unwrap Image Tables',
-						name: 'unwrapImageTables',
-						type: 'boolean',
-						default: false,
-						description:
-							'Whether to replace any <table> containing exactly one <img> with just the image. Useful for Substack and other newsletter emails that wrap images in layout tables.',
-					},
-					{
 						displayName: 'Request Timeout (Ms)',
 						name: 'timeoutMs',
 						type: 'number',
 						default: 15000,
 						description: 'HTTP timeout when fetching a URL',
+					},
+					{
+						displayName: 'Unwrap Image Tables',
+						name: 'unwrapImageTables',
+						type: 'boolean',
+						default: false,
+						description:
+							'Whether to replace any &lt;table&gt; containing exactly one &lt;img&gt; with just the image. Useful for Substack and other newsletter emails that wrap images in layout tables.',
 					},
 					{
 						displayName: 'User Agent',
