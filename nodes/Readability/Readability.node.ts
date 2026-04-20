@@ -9,8 +9,51 @@ import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
 import { Readability as ReadabilityParser, isProbablyReaderable } from '@mozilla/readability';
 import { JSDOM, VirtualConsole } from 'jsdom';
+import QRCode from 'qrcode';
 
 type InputSource = 'url' | 'html' | 'binary';
+
+function resolveVideoUrl(el: Element): string | null {
+	let anchor: Element | null = el.parentElement;
+	while (anchor && anchor.tagName !== 'A') anchor = anchor.parentElement;
+	const anchorHref = anchor?.getAttribute('href');
+	if (anchorHref) return anchorHref;
+
+	if (el.tagName === 'VIDEO') {
+		const direct = el.getAttribute('src');
+		if (direct) return direct;
+		return el.querySelector('source')?.getAttribute('src') ?? null;
+	}
+	return el.getAttribute('src');
+}
+
+function outerVideoContainer(el: Element): Element {
+	let node: Element = el;
+	if (node.parentElement?.tagName === 'A') node = node.parentElement;
+	const p = node.parentElement;
+	if (
+		p &&
+		p.tagName === 'P' &&
+		p.children.length === 1 &&
+		(p.textContent ?? '').trim() === (node.textContent ?? '').trim()
+	) {
+		node = p;
+	}
+	return node;
+}
+
+function buildQrReplacement(doc: Document, svgMarkup: string, url: string): Element {
+	const wrapper = doc.createElement('figure');
+	wrapper.setAttribute('class', 'qr-for-video');
+	const temp = doc.createElement('div');
+	temp.innerHTML = svgMarkup;
+	const svg = temp.querySelector('svg');
+	if (svg) wrapper.appendChild(svg);
+	const caption = doc.createElement('figcaption');
+	caption.textContent = `Scan to watch: ${url}`;
+	wrapper.appendChild(caption);
+	return wrapper;
+}
 
 interface ParsedArticle {
 	title: string | null;
@@ -199,6 +242,27 @@ export class Readability implements INodeType {
 							'Mozilla/5.0 (compatible; n8n-nodes-reader-view/0.1; +https://github.com/AronStankovics/n8n-nodes-readability)',
 						description: 'User-Agent header sent when fetching a URL',
 					},
+					{
+						displayName: 'Videos',
+						name: 'videos',
+						type: 'options',
+						default: 'keep',
+						description:
+							'How to handle video elements (&lt;video&gt;, known video iframes, and newsletter video preview images)',
+						options: [
+							{ name: 'Keep', value: 'keep', description: 'Leave video elements untouched' },
+							{
+								name: 'Remove',
+								value: 'remove',
+								description: 'Delete video elements (and enclosing anchor/paragraph if they contain nothing else)',
+							},
+							{
+								name: 'Generate QR Code',
+								value: 'qr',
+								description: 'Replace the video element with an inline SVG QR code of the video URL — useful for Kindle readers',
+							},
+						],
+					},
 				],
 			},
 		],
@@ -222,6 +286,7 @@ export class Readability implements INodeType {
 					unwrapImageTables?: boolean;
 					timeoutMs?: number;
 					userAgent?: string;
+					videos?: 'keep' | 'remove' | 'qr';
 				};
 
 				let html: string;
@@ -301,7 +366,9 @@ export class Readability implements INodeType {
 				const needsPostProcess =
 					options.removeLinks === 'unwrap' ||
 					options.removeLinks === 'strip' ||
-					options.unwrapImageTables === true;
+					options.unwrapImageTables === true ||
+					options.videos === 'remove' ||
+					options.videos === 'qr';
 
 				if (needsPostProcess && article.content) {
 					const container = doc.createElement('div');
@@ -312,6 +379,36 @@ export class Readability implements INodeType {
 							const imgs = table.querySelectorAll('img');
 							if (imgs.length === 1) {
 								table.parentNode?.replaceChild(imgs[0].cloneNode(true), table);
+							}
+						}
+					}
+
+					if (options.videos === 'remove' || options.videos === 'qr') {
+						const videoSelector = [
+							'video',
+							'iframe[src*="youtube.com"]',
+							'iframe[src*="youtube-nocookie.com"]',
+							'iframe[src*="vimeo.com"]',
+							'iframe[src*="loom.com"]',
+							'iframe[src*="wistia.net"]',
+							'img[data-component-name^="Video"]',
+							'img[data-testid^="video-"]',
+						].join(',');
+						const videoEls = Array.from(container.querySelectorAll(videoSelector));
+						for (const el of videoEls) {
+							const url = resolveVideoUrl(el);
+							const target = outerVideoContainer(el);
+							if (!target.parentNode) continue;
+							if (options.videos === 'remove' || !url) {
+								target.remove();
+							} else {
+								const qrSvg = await QRCode.toString(url, {
+									type: 'svg',
+									errorCorrectionLevel: 'M',
+									margin: 1,
+									width: 256,
+								});
+								target.parentNode.replaceChild(buildQrReplacement(doc, qrSvg, url), target);
 							}
 						}
 					}
@@ -328,7 +425,7 @@ export class Readability implements INodeType {
 					}
 
 					article.content = container.innerHTML;
-					if (options.removeLinks === 'strip') {
+					if (options.removeLinks === 'strip' || options.videos === 'remove') {
 						article.textContent = container.textContent ?? '';
 						article.length = article.textContent.length;
 					}
