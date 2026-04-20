@@ -177,6 +177,14 @@ export class Readability implements INodeType {
 						],
 					},
 					{
+						displayName: 'Unwrap Image Tables',
+						name: 'unwrapImageTables',
+						type: 'boolean',
+						default: false,
+						description:
+							'Whether to replace any <table> containing exactly one <img> with just the image. Useful for Substack and other newsletter emails that wrap images in layout tables.',
+					},
+					{
 						displayName: 'Request Timeout (Ms)',
 						name: 'timeoutMs',
 						type: 'number',
@@ -211,6 +219,7 @@ export class Readability implements INodeType {
 					nbTopCandidates?: number;
 					probablyReaderableOnly?: boolean;
 					removeLinks?: 'keep' | 'unwrap' | 'strip';
+					unwrapImageTables?: boolean;
 					timeoutMs?: number;
 					userAgent?: string;
 				};
@@ -289,21 +298,35 @@ export class Readability implements INodeType {
 					continue;
 				}
 
-				if (
-					(options.removeLinks === 'unwrap' || options.removeLinks === 'strip') &&
-					article.content
-				) {
+				const needsPostProcess =
+					options.removeLinks === 'unwrap' ||
+					options.removeLinks === 'strip' ||
+					options.unwrapImageTables === true;
+
+				if (needsPostProcess && article.content) {
 					const container = doc.createElement('div');
 					container.innerHTML = article.content;
-					const anchors = container.querySelectorAll('a');
-					for (const a of Array.from(anchors)) {
-						if (options.removeLinks === 'strip') {
-							a.remove();
-						} else {
-							while (a.firstChild) a.parentNode?.insertBefore(a.firstChild, a);
-							a.remove();
+
+					if (options.unwrapImageTables) {
+						for (const table of Array.from(container.querySelectorAll('table'))) {
+							const imgs = table.querySelectorAll('img');
+							if (imgs.length === 1) {
+								table.parentNode?.replaceChild(imgs[0].cloneNode(true), table);
+							}
 						}
 					}
+
+					if (options.removeLinks === 'unwrap' || options.removeLinks === 'strip') {
+						for (const a of Array.from(container.querySelectorAll('a'))) {
+							if (options.removeLinks === 'strip') {
+								a.remove();
+							} else {
+								while (a.firstChild) a.parentNode?.insertBefore(a.firstChild, a);
+								a.remove();
+							}
+						}
+					}
+
 					article.content = container.innerHTML;
 					if (options.removeLinks === 'strip') {
 						article.textContent = container.textContent ?? '';

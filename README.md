@@ -30,6 +30,7 @@ Community nodes on Cloud must go through n8n's verification process. See [Publis
 | Number of Top Candidates | 5 | How many candidate roots Readability ranks |
 | Probably Readable Only | false | Skip pages Readability thinks are unlikely articles |
 | Remove Links | `keep` | Post-process anchors: `keep` leaves them, `unwrap` removes `<a>` but keeps its text/children, `strip` removes the anchor and its content |
+| Unwrap Image Tables | false | Replace any `<table>` containing exactly one `<img>` with just the image. Fixes Substack and similar newsletter emails that wrap images in layout tables. |
 | Debug | false | Readability debug logging to stderr |
 | Request Timeout (ms) | 15000 | Only used for `URL` source |
 | User Agent | `Mozilla/5.0 …` | Only used for `URL` source |
