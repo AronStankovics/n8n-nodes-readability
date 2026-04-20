@@ -156,6 +156,27 @@ export class Readability implements INodeType {
 							'Whether to skip pages that isProbablyReaderable considers unlikely to be articles',
 					},
 					{
+						displayName: 'Remove Links',
+						name: 'removeLinks',
+						type: 'options',
+						default: 'keep',
+						description:
+							'Post-process the extracted HTML to strip anchor tags. Useful for EPUB/Kindle output where links are distracting.',
+						options: [
+							{ name: 'Keep', value: 'keep', description: 'Leave anchors untouched' },
+							{
+								name: 'Unwrap',
+								value: 'unwrap',
+								description: 'Remove <a> tags but keep their text and child content',
+							},
+							{
+								name: 'Strip',
+								value: 'strip',
+								description: 'Remove <a> tags along with their content',
+							},
+						],
+					},
+					{
 						displayName: 'Request Timeout (Ms)',
 						name: 'timeoutMs',
 						type: 'number',
@@ -189,6 +210,7 @@ export class Readability implements INodeType {
 					maxElemsToParse?: number;
 					nbTopCandidates?: number;
 					probablyReaderableOnly?: boolean;
+					removeLinks?: 'keep' | 'unwrap' | 'strip';
 					timeoutMs?: number;
 					userAgent?: string;
 				};
@@ -265,6 +287,28 @@ export class Readability implements INodeType {
 						pairedItem: { item: itemIndex },
 					});
 					continue;
+				}
+
+				if (
+					(options.removeLinks === 'unwrap' || options.removeLinks === 'strip') &&
+					article.content
+				) {
+					const container = doc.createElement('div');
+					container.innerHTML = article.content;
+					const anchors = container.querySelectorAll('a');
+					for (const a of Array.from(anchors)) {
+						if (options.removeLinks === 'strip') {
+							a.remove();
+						} else {
+							while (a.firstChild) a.parentNode?.insertBefore(a.firstChild, a);
+							a.remove();
+						}
+					}
+					article.content = container.innerHTML;
+					if (options.removeLinks === 'strip') {
+						article.textContent = container.textContent ?? '';
+						article.length = article.textContent.length;
+					}
 				}
 
 				const json: IDataObject = {
