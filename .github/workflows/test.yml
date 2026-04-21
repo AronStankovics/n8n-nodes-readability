@@ -25,7 +25,11 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        # --ignore-scripts skips native postinstalls (notably isolated-vm, a
+        # transitive dep of @n8n/node-cli that fails to compile on some
+        # Node 20.x V8 headers). We don't exercise isolated-vm from the test
+        # suite or the lint step, so skipping its build is safe.
+        run: npm ci --ignore-scripts
 
       - name: Lint
         run: npm run lint
