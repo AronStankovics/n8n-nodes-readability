@@ -1,3 +1,10 @@
 import { configWithoutCloudSupport } from '@n8n/node-cli/eslint';
 
-export default configWithoutCloudSupport;
+const base = Array.isArray(configWithoutCloudSupport)
+	? configWithoutCloudSupport
+	: [configWithoutCloudSupport];
+
+export default [
+	...base,
+	{ ignores: ['test/**', 'dist/**', 'coverage/**', '.nyc_output/**'] },
+];

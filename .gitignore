@@ -6,3 +6,5 @@ dist
 .vscode
 .idea
 tsconfig.tsbuildinfo
+coverage
+.nyc_output
