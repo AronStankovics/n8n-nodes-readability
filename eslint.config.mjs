@@ -6,5 +6,5 @@ const base = Array.isArray(configWithoutCloudSupport)
 
 export default [
 	...base,
-	{ ignores: ['test/**', 'dist/**', 'coverage/**', '.nyc_output/**'] },
+	{ ignores: ['test/**', 'dist/**', 'coverage/**'] },
 ];
