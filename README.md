@@ -70,9 +70,9 @@ npm run lint
 
 ```bash
 npm install
-npm test                 # unit tests (mocha + chai + proxyquire)
-npm run integration-test # unit + offline integration tests
-npm run coverage         # unit tests with coverage report in ./coverage
+npm test           # run the full suite once (vitest)
+npm run test:watch # watch mode
+npm run coverage   # full suite + coverage report in ./coverage
 ```
 
 Test layout:

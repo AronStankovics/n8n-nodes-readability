@@ -22,9 +22,5 @@
 		"outDir": "./dist/"
 	},
 	"include": ["nodes/**/*", "nodes/**/*.json", "package.json"],
-	"exclude": ["test", "dist", "node_modules", "coverage", ".nyc_output"],
-	"ts-node": {
-		"preferTsExts": true,
-		"transpileOnly": true
-	}
+	"exclude": ["test", "dist", "node_modules", "coverage"]
 }

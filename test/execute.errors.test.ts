@@ -2,16 +2,16 @@
  * Tests for Readability.execute() error paths and continueOnFail semantics.
  */
 
-import { expect } from 'chai';
+import { describe, it, expect } from 'vitest';
 import { NodeOperationError } from 'n8n-workflow';
 
 import { Readability } from '../nodes/Readability/Readability.node';
 import { createMockExecuteFunctions } from './mock-execute-functions';
 import { articleHtml } from './test-data';
 
-describe('nodes/Readability/Readability.node.ts', function () {
-	describe('#execute (error handling)', function () {
-		it('should rethrow an existing NodeOperationError unchanged', async function () {
+describe('nodes/Readability/Readability.node.ts', () => {
+	describe('#execute (error handling)', () => {
+		it('should rethrow an existing NodeOperationError unchanged', async () => {
 			const existing = new NodeOperationError(
 				{ id: 'x', name: 'n', type: 't', typeVersion: 1, position: [0, 0], parameters: {} },
 				'boom from httpRequest',
@@ -22,15 +22,10 @@ describe('nodes/Readability/Readability.node.ts', function () {
 					throw existing;
 				},
 			});
-			try {
-				await new Readability().execute.call(mock);
-				throw new Error('expected execute to throw');
-			} catch (err) {
-				expect(err).to.equal(existing);
-			}
+			await expect(new Readability().execute.call(mock)).rejects.toBe(existing);
 		});
 
-		it('should wrap a plain Error as a NodeOperationError with itemIndex', async function () {
+		it('should wrap a plain Error as a NodeOperationError with itemIndex', async () => {
 			const mock = createMockExecuteFunctions({
 				params: { inputSource: 'url', url: 'https://ex.com/a', options: {} },
 				httpRequest: async () => {
@@ -41,13 +36,13 @@ describe('nodes/Readability/Readability.node.ts', function () {
 				await new Readability().execute.call(mock);
 				throw new Error('expected execute to throw');
 			} catch (err) {
-				expect(err).to.be.instanceOf(NodeOperationError);
+				expect(err).toBeInstanceOf(NodeOperationError);
 				const ctx = (err as unknown as { context?: { itemIndex?: number } }).context;
-				expect(ctx?.itemIndex ?? 0).to.equal(0);
+				expect(ctx?.itemIndex ?? 0).toBe(0);
 			}
 		});
 
-		it('should include the error message in json.error when continueOnFail is true', async function () {
+		it('should include the error message in json.error when continueOnFail is true', async () => {
 			const mock = createMockExecuteFunctions({
 				params: { inputSource: 'url', url: 'https://ex.com/a', options: {} },
 				continueOnFail: true,
@@ -56,10 +51,10 @@ describe('nodes/Readability/Readability.node.ts', function () {
 				},
 			});
 			const [out] = await new Readability().execute.call(mock);
-			expect(out[0].json).to.have.property('error').that.match(/helpful message/);
+			expect(out[0].json.error).toMatch(/helpful message/);
 		});
 
-		it('should continue processing remaining items when one item fails with continueOnFail', async function () {
+		it('should continue processing remaining items when one item fails with continueOnFail', async () => {
 			let call = 0;
 			const mock = createMockExecuteFunctions({
 				items: [{ json: {} }, { json: {} }, { json: {} }],
@@ -77,10 +72,10 @@ describe('nodes/Readability/Readability.node.ts', function () {
 				},
 			});
 			const [out] = await new Readability().execute.call(mock);
-			expect(out).to.have.lengthOf(3);
-			expect(out[0].json).to.have.property('readable', true);
-			expect(out[1].json).to.have.property('error').that.match(/middle failed/);
-			expect(out[2].json).to.have.property('readable', true);
+			expect(out).toHaveLength(3);
+			expect(out[0].json).toHaveProperty('readable', true);
+			expect(out[1].json.error).toMatch(/middle failed/);
+			expect(out[2].json).toHaveProperty('readable', true);
 		});
 	});
 });
