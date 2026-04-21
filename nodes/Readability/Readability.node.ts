@@ -13,7 +13,7 @@ import QRCode from 'qrcode';
 
 type InputSource = 'url' | 'html' | 'binary';
 
-function resolveVideoUrl(el: Element): string | null {
+export function resolveVideoUrl(el: Element): string | null {
 	let anchor: Element | null = el.parentElement;
 	while (anchor && anchor.tagName !== 'A') anchor = anchor.parentElement;
 	const anchorHref = anchor?.getAttribute('href');
@@ -27,7 +27,7 @@ function resolveVideoUrl(el: Element): string | null {
 	return el.getAttribute('src');
 }
 
-function outerVideoContainer(el: Element): Element {
+export function outerVideoContainer(el: Element): Element {
 	let node: Element = el;
 	if (node.parentElement?.tagName === 'A') node = node.parentElement;
 	const p = node.parentElement;
@@ -42,7 +42,7 @@ function outerVideoContainer(el: Element): Element {
 	return node;
 }
 
-function buildQrReplacement(doc: Document, svgMarkup: string): Element {
+export function buildQrReplacement(doc: Document, svgMarkup: string): Element {
 	const wrapper = doc.createElement('p');
 	wrapper.setAttribute('class', 'qr-for-video');
 	wrapper.setAttribute('style', 'text-align: center');

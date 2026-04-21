@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Readability (software) - Wikipedia</title>
+	<meta name="author" content="Contributors">
+</head>
+<body>
+<div id="mw-page-base"></div>
+<div id="content" class="mw-body" role="main">
+	<header id="mw-head">
+		<nav><ul><li><a href="/wiki/Main_Page">Main page</a></li><li><a href="/wiki/Special:Random">Random article</a></li></ul></nav>
+	</header>
+	<article>
+		<h1 id="firstHeading" class="firstHeading">Readability (software)</h1>
+		<p class="byline">From the Encyclopaedia of Reader Modes</p>
+		<p><b>Readability</b> is a free Web service and a family of open-source libraries that extract the primary text content of a web page while stripping away navigation, advertising, and other chrome. The original service was launched as a bookmarklet and later became the basis of the <i>Reader Mode</i> features shipped in Safari, Firefox, and several third-party browsers and e-readers.</p>
+		<p>The core algorithm scores every DOM node by a combination of heuristics such as tag name, link density, text length, class and identifier hints (for example, nodes with a class of <code>content</code> or <code>article</code> receive a small boost, while nodes matching <code>sidebar</code> or <code>comment</code> are penalised). The highest-scoring candidate node and its ancestors are selected as the likely article, cleaned up, and returned as a simplified document.</p>
+		<p>Mozilla maintains a port of the library, called <code>@mozilla/readability</code>, which powers Firefox's reader view. It is distributed on npm and widely used in server-side content processing pipelines, including summarisation frontends, e-reader publication tools, and RSS normalisers.</p>
+		<h2>History</h2>
+		<p>The original Readability bookmarklet was released in 2009 by Arc90 and spread rapidly among bloggers and journalists who valued its uncluttered rendering of noisy article pages. Several browsers integrated similar functionality within a year, and the algorithm's influence can be seen in many modern reader-mode implementations.</p>
+		<p>In 2011 the service relaunched as a paid subscription and continued to operate until 2016, at which point the parent company shut it down. The open-source libraries, however, remained actively maintained, and a community-driven Mozilla fork has continued to accrue improvements ever since.</p>
+		<h2>Algorithm overview</h2>
+		<p>Readability first parses the HTML into a DOM tree using a tolerant parser. It then walks every block-level element and computes a score based on text length divided by link density, multiplied by a weight derived from the element's tag name. The algorithm also rewards long paragraphs and penalises elements with classes strongly associated with navigation, headers, and comment sections.</p>
+		<p>Once every candidate is scored, the parser selects the top-ranked node, inherits scores from its nearest ancestors, and merges siblings whose scores exceed a configurable threshold. The resulting subtree is then sanitised: scripts, styles, and on* attributes are removed, images and links are optionally rewritten to absolute URLs, and the cleaned HTML is returned to the caller.</p>
+		<h2>Adoption</h2>
+		<p>Reader-mode features based on or inspired by Readability now ship in the default configurations of Firefox, Safari, Microsoft Edge, and several third-party browsers. Specialised tools such as Pocket, Instapaper, and Send-To-Kindle rely on similar algorithms to produce clean, text-first renderings of saved articles.</p>
+		<p>Because the algorithm is forgiving and works surprisingly well on commercial news sites, it has also become a popular preprocessing step in machine-learning pipelines that train on web text: running Readability first removes boilerplate and lets downstream components operate on the actual body of each document.</p>
+	</article>
+	<footer>Text is available under the Creative Commons Attribution-ShareAlike License.</footer>
+</div>
+</body>
+</html>

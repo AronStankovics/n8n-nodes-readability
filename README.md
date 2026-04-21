@@ -66,6 +66,22 @@ npm run build
 npm run lint
 ```
 
+## Running tests
+
+```bash
+npm install
+npm test                 # unit tests (mocha + chai + proxyquire)
+npm run integration-test # unit + offline integration tests
+npm run coverage         # unit tests with coverage report in ./coverage
+```
+
+Test layout:
+
+- `test/*.test.ts` — unit tests
+- `test/integration/*.test.ts` — end-to-end tests against checked-in HTML fixtures
+
+Coverage is published to Coveralls from CI when the action is configured on the repo.
+
 ## License
 
 MIT
