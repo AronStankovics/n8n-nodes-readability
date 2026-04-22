@@ -122,7 +122,7 @@ describe('nodes/Readability/post/pipeline.ts', () => {
 				'<p>Intro.</p><table><tr><td><img src="https://ex.com/a.png" alt="Alt Text"></td></tr></table><p>Outro.</p>';
 			const result = await runPostProcess(html, doc, { unwrapImageTables: true });
 			expect(result.content).not.toContain('<table');
-			expect(result.textContent).toBe(result.textContent.trim() ? result.textContent : '');
+			expect(result.textContent).toBe('Intro.Outro.');
 			expect(result.length).toBe(result.textContent.length);
 		});
 	});
