@@ -5,7 +5,8 @@
 
 import { describe, it, expect } from 'vitest';
 
-import { Readability, properties } from '../nodes/Readability/Readability.node';
+import { Readability } from '../nodes/Readability/Readability.node';
+import { properties } from '../nodes/Readability/properties';
 
 describe('nodes/Readability/Readability.node.ts', () => {
 	describe('description', () => {
