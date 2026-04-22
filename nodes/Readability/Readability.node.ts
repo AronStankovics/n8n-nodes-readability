@@ -9,49 +9,14 @@ import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
 import { Readability as ReadabilityParser, isProbablyReaderable } from '@mozilla/readability';
 import { JSDOM, VirtualConsole } from 'jsdom';
-import QRCode from 'qrcode';
 
-type InputSource = 'url' | 'html' | 'binary';
+import { needsPostProcess, runPostProcess } from './post/pipeline';
+import { loadDocument, type InputSource } from './source/load';
 
-export function resolveVideoUrl(el: Element): string | null {
-	let anchor: Element | null = el.parentElement;
-	while (anchor && anchor.tagName !== 'A') anchor = anchor.parentElement;
-	const anchorHref = anchor?.getAttribute('href');
-	if (anchorHref) return anchorHref;
-
-	if (el.tagName === 'VIDEO') {
-		const direct = el.getAttribute('src');
-		if (direct) return direct;
-		return el.querySelector('source')?.getAttribute('src') ?? null;
-	}
-	return el.getAttribute('src');
-}
-
-export function outerVideoContainer(el: Element): Element {
-	let node: Element = el;
-	if (node.parentElement?.tagName === 'A') node = node.parentElement;
-	const p = node.parentElement;
-	if (
-		p &&
-		p.tagName === 'P' &&
-		p.children.length === 1 &&
-		(p.textContent ?? '').trim() === (node.textContent ?? '').trim()
-	) {
-		node = p;
-	}
-	return node;
-}
-
-export function buildQrReplacement(doc: Document, svgMarkup: string): Element {
-	const wrapper = doc.createElement('p');
-	wrapper.setAttribute('class', 'qr-for-video');
-	wrapper.setAttribute('style', 'text-align: center');
-	const temp = doc.createElement('div');
-	temp.innerHTML = svgMarkup;
-	const svg = temp.querySelector('svg');
-	if (svg) wrapper.appendChild(svg);
-	return wrapper;
-}
+const DEFAULT_USER_AGENT =
+	'Mozilla/5.0 (compatible; n8n-nodes-reader-view/0.1; +https://github.com/AronStankovics/n8n-nodes-readability)';
+const DEFAULT_TIMEOUT_MS = 15000;
+const DEFAULT_BINARY_PROPERTY = 'data';
 
 interface ParsedArticle {
 	title: string | null;
@@ -139,7 +104,7 @@ export class Readability implements INodeType {
 				displayName: 'Input Binary Property',
 				name: 'inputBinaryProperty',
 				type: 'string',
-				default: 'data',
+				default: DEFAULT_BINARY_PROPERTY,
 				required: true,
 				description: 'Name of the binary property that holds the HTML',
 				displayOptions: { show: { inputSource: ['binary'] } },
@@ -221,7 +186,7 @@ export class Readability implements INodeType {
 						displayName: 'Request Timeout (Ms)',
 						name: 'timeoutMs',
 						type: 'number',
-						default: 15000,
+						default: DEFAULT_TIMEOUT_MS,
 						description: 'HTTP timeout when fetching a URL',
 					},
 					{
@@ -236,8 +201,7 @@ export class Readability implements INodeType {
 						displayName: 'User Agent',
 						name: 'userAgent',
 						type: 'string',
-						default:
-							'Mozilla/5.0 (compatible; n8n-nodes-reader-view/0.1; +https://github.com/AronStankovics/n8n-nodes-readability)',
+						default: DEFAULT_USER_AGENT,
 						description: 'User-Agent header sent when fetching a URL',
 					},
 					{
@@ -287,48 +251,23 @@ export class Readability implements INodeType {
 					videos?: 'keep' | 'remove' | 'qr';
 				};
 
-				let html: string;
-				let documentUrl: string;
-
-				if (inputSource === 'url') {
-					documentUrl = this.getNodeParameter('url', itemIndex) as string;
-					const response = await this.helpers.httpRequest({
-						method: 'GET',
-						url: documentUrl,
-						headers: {
-							'User-Agent':
-								options.userAgent ??
-								'Mozilla/5.0 (compatible; n8n-nodes-reader-view/0.1)',
-							Accept: 'text/html,application/xhtml+xml,*/*;q=0.8',
-						},
-						timeout: options.timeoutMs ?? 15000,
-						returnFullResponse: false,
-					});
-					html = typeof response === 'string' ? response : String(response);
-				} else {
-					documentUrl =
-						(this.getNodeParameter('baseUrl', itemIndex, '') as string) || 'about:blank';
-					if (inputSource === 'html') {
-						html = this.getNodeParameter('html', itemIndex) as string;
-					} else {
-						const inputBinaryProperty = this.getNodeParameter(
-							'inputBinaryProperty',
-							itemIndex,
-						) as string;
-						const buffer = await this.helpers.getBinaryDataBuffer(
-							itemIndex,
-							inputBinaryProperty,
-						);
-						html = buffer.toString('utf-8');
-					}
-				}
+				const { html, url: documentUrl } = await loadDocument(inputSource, {
+					ctx: this,
+					itemIndex,
+					requestOptions: { userAgent: options.userAgent, timeoutMs: options.timeoutMs },
+					defaults: {
+						userAgent: DEFAULT_USER_AGENT,
+						timeoutMs: DEFAULT_TIMEOUT_MS,
+						binaryProperty: DEFAULT_BINARY_PROPERTY,
+					},
+				});
 
 				const virtualConsole = new VirtualConsole();
 				// Silence jsdom CSS/script noise; we only need the parsed DOM.
 				virtualConsole.on('error', () => undefined);
 				virtualConsole.on('jsdomError', () => undefined);
 
-				const dom = new JSDOM(html, { url: documentUrl, virtualConsole });
+				const dom = new JSDOM(html, { url: documentUrl ?? 'about:blank', virtualConsole });
 				const doc = dom.window.document;
 
 				if (options.probablyReaderableOnly && !isProbablyReaderable(doc)) {
@@ -361,72 +300,15 @@ export class Readability implements INodeType {
 					continue;
 				}
 
-				const needsPostProcess =
-					options.removeLinks === 'unwrap' ||
-					options.removeLinks === 'strip' ||
-					options.unwrapImageTables === true ||
-					options.videos === 'remove' ||
-					options.videos === 'qr';
-
-				if (needsPostProcess && article.content) {
-					const container = doc.createElement('div');
-					container.innerHTML = article.content;
-
-					if (options.unwrapImageTables) {
-						for (const table of Array.from(container.querySelectorAll('table'))) {
-							const imgs = table.querySelectorAll('img');
-							if (imgs.length === 1) {
-								table.parentNode?.replaceChild(imgs[0].cloneNode(true), table);
-							}
-						}
-					}
-
-					if (options.videos === 'remove' || options.videos === 'qr') {
-						const videoSelector = [
-							'video',
-							'iframe[src*="youtube.com"]',
-							'iframe[src*="youtube-nocookie.com"]',
-							'iframe[src*="vimeo.com"]',
-							'iframe[src*="loom.com"]',
-							'iframe[src*="wistia.net"]',
-							'img[data-component-name^="Video"]',
-							'img[data-testid^="video-"]',
-						].join(',');
-						const videoEls = Array.from(container.querySelectorAll(videoSelector));
-						for (const el of videoEls) {
-							const url = resolveVideoUrl(el);
-							const target = outerVideoContainer(el);
-							if (!target.parentNode) continue;
-							if (options.videos === 'remove' || !url) {
-								target.remove();
-							} else {
-								const qrSvg = await QRCode.toString(url, {
-									type: 'svg',
-									errorCorrectionLevel: 'M',
-									margin: 1,
-									width: 128,
-								});
-								target.parentNode.replaceChild(buildQrReplacement(doc, qrSvg), target);
-							}
-						}
-					}
-
-					if (options.removeLinks === 'unwrap' || options.removeLinks === 'strip') {
-						for (const a of Array.from(container.querySelectorAll('a'))) {
-							if (options.removeLinks === 'strip') {
-								a.remove();
-							} else {
-								while (a.firstChild) a.parentNode?.insertBefore(a.firstChild, a);
-								a.remove();
-							}
-						}
-					}
-
-					article.content = container.innerHTML;
-					if (options.removeLinks === 'strip' || options.videos === 'remove') {
-						article.textContent = container.textContent ?? '';
-						article.length = article.textContent.length;
-					}
+				if (needsPostProcess(options) && article.content) {
+					const result = await runPostProcess(article.content, doc, {
+						unwrapImageTables: options.unwrapImageTables,
+						videos: options.videos,
+						removeLinks: options.removeLinks,
+					});
+					article.content = result.content;
+					article.textContent = result.textContent;
+					article.length = result.length;
 				}
 
 				const json: IDataObject = {
