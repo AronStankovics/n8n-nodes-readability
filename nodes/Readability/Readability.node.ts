@@ -11,8 +11,7 @@ import { Readability as ReadabilityParser, isProbablyReaderable } from '@mozilla
 import { JSDOM, VirtualConsole } from 'jsdom';
 
 import { needsPostProcess, runPostProcess } from './post/pipeline';
-
-type InputSource = 'url' | 'html' | 'binary';
+import { loadDocument, type InputSource } from './source/load';
 
 const DEFAULT_USER_AGENT =
 	'Mozilla/5.0 (compatible; n8n-nodes-reader-view/0.1; +https://github.com/AronStankovics/n8n-nodes-readability)';
@@ -252,40 +251,16 @@ export class Readability implements INodeType {
 					videos?: 'keep' | 'remove' | 'qr';
 				};
 
-				let html: string;
-				let documentUrl: string;
-
-				if (inputSource === 'url') {
-					documentUrl = this.getNodeParameter('url', itemIndex) as string;
-					const response = await this.helpers.httpRequest({
-						method: 'GET',
-						url: documentUrl,
-						headers: {
-							'User-Agent': options.userAgent ?? DEFAULT_USER_AGENT,
-							Accept: 'text/html,application/xhtml+xml,*/*;q=0.8',
-						},
-						timeout: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
-						returnFullResponse: false,
-					});
-					html = typeof response === 'string' ? response : String(response);
-				} else {
-					documentUrl =
-						(this.getNodeParameter('baseUrl', itemIndex, '') as string) || 'about:blank';
-					if (inputSource === 'html') {
-						html = this.getNodeParameter('html', itemIndex) as string;
-					} else {
-						const inputBinaryProperty = this.getNodeParameter(
-							'inputBinaryProperty',
-							itemIndex,
-							DEFAULT_BINARY_PROPERTY,
-						) as string;
-						const buffer = await this.helpers.getBinaryDataBuffer(
-							itemIndex,
-							inputBinaryProperty,
-						);
-						html = buffer.toString('utf-8');
-					}
-				}
+				const { html, url: documentUrl } = await loadDocument(inputSource, {
+					ctx: this,
+					itemIndex,
+					requestOptions: { userAgent: options.userAgent, timeoutMs: options.timeoutMs },
+					defaults: {
+						userAgent: DEFAULT_USER_AGENT,
+						timeoutMs: DEFAULT_TIMEOUT_MS,
+						binaryProperty: DEFAULT_BINARY_PROPERTY,
+					},
+				});
 
 				const virtualConsole = new VirtualConsole();
 				// Silence jsdom CSS/script noise; we only need the parsed DOM.
