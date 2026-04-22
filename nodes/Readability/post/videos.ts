@@ -13,6 +13,32 @@ const VIDEO_SELECTOR = [
 	'img[data-testid^="video-"]',
 ].join(',');
 
+const VIDEO_QR_CONCURRENCY_LIMIT = 4;
+
+async function mapWithConcurrencyLimit<T, R>(
+	items: readonly T[],
+	limit: number,
+	mapper: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+	const results: R[] = new Array(items.length);
+	let nextIndex = 0;
+
+	async function worker(): Promise<void> {
+		while (true) {
+			const currentIndex = nextIndex++;
+			if (currentIndex >= items.length) return;
+			results[currentIndex] = await mapper(items[currentIndex], currentIndex);
+		}
+	}
+
+	const workerCount = Math.min(limit, items.length);
+	await Promise.all(
+		Array.from({ length: workerCount }, () => worker()),
+	);
+
+	return results;
+}
+
 export function resolveVideoUrl(el: Element): string | null {
 	let anchor: Element | null = el.parentElement;
 	while (anchor && anchor.tagName !== 'A') anchor = anchor.parentElement;
@@ -67,8 +93,10 @@ export async function processVideos(
 		jobs.push({ url: resolveVideoUrl(el), target });
 	}
 
-	const qrSvgs = await Promise.all(
-		jobs.map((job) =>
+	const qrSvgs = await mapWithConcurrencyLimit(
+		jobs,
+		VIDEO_QR_CONCURRENCY_LIMIT,
+		(job) =>
 			mode === 'qr' && job.url
 				? QRCode.toString(job.url, {
 						type: 'svg',
@@ -77,7 +105,6 @@ export async function processVideos(
 						width: 128,
 					})
 				: Promise.resolve<string | null>(null),
-		),
 	);
 
 	for (let i = 0; i < jobs.length; i++) {
