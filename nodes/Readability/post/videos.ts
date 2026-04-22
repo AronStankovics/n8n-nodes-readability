@@ -1,3 +1,18 @@
+import QRCode from 'qrcode';
+
+export type VideoMode = 'keep' | 'remove' | 'qr';
+
+const VIDEO_SELECTOR = [
+	'video',
+	'iframe[src*="youtube.com"]',
+	'iframe[src*="youtube-nocookie.com"]',
+	'iframe[src*="vimeo.com"]',
+	'iframe[src*="loom.com"]',
+	'iframe[src*="wistia.net"]',
+	'img[data-component-name^="Video"]',
+	'img[data-testid^="video-"]',
+].join(',');
+
 export function resolveVideoUrl(el: Element): string | null {
 	let anchor: Element | null = el.parentElement;
 	while (anchor && anchor.tagName !== 'A') anchor = anchor.parentElement;
@@ -36,4 +51,28 @@ export function buildQrReplacement(doc: Document, svgMarkup: string): Element {
 	const svg = temp.querySelector('svg');
 	if (svg) wrapper.appendChild(svg);
 	return wrapper;
+}
+
+export async function processVideos(
+	container: Element,
+	doc: Document,
+	mode: 'remove' | 'qr',
+): Promise<void> {
+	const videoEls = container.querySelectorAll(VIDEO_SELECTOR);
+	for (const el of videoEls) {
+		const url = resolveVideoUrl(el);
+		const target = outerVideoContainer(el);
+		if (!target.parentNode) continue;
+		if (mode === 'remove' || !url) {
+			target.remove();
+		} else {
+			const qrSvg = await QRCode.toString(url, {
+				type: 'svg',
+				errorCorrectionLevel: 'M',
+				margin: 1,
+				width: 128,
+			});
+			target.parentNode.replaceChild(buildQrReplacement(doc, qrSvg), target);
+		}
+	}
 }

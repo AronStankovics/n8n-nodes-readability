@@ -9,9 +9,8 @@ import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
 import { Readability as ReadabilityParser, isProbablyReaderable } from '@mozilla/readability';
 import { JSDOM, VirtualConsole } from 'jsdom';
-import QRCode from 'qrcode';
 
-import { buildQrReplacement, outerVideoContainer, resolveVideoUrl } from './post/videos';
+import { needsPostProcess, runPostProcess } from './post/pipeline';
 
 type InputSource = 'url' | 'html' | 'binary';
 
@@ -326,72 +325,15 @@ export class Readability implements INodeType {
 					continue;
 				}
 
-				const needsPostProcess =
-					options.removeLinks === 'unwrap' ||
-					options.removeLinks === 'strip' ||
-					options.unwrapImageTables === true ||
-					options.videos === 'remove' ||
-					options.videos === 'qr';
-
-				if (needsPostProcess && article.content) {
-					const container = doc.createElement('div');
-					container.innerHTML = article.content;
-
-					if (options.unwrapImageTables) {
-						for (const table of Array.from(container.querySelectorAll('table'))) {
-							const imgs = table.querySelectorAll('img');
-							if (imgs.length === 1) {
-								table.parentNode?.replaceChild(imgs[0].cloneNode(true), table);
-							}
-						}
-					}
-
-					if (options.videos === 'remove' || options.videos === 'qr') {
-						const videoSelector = [
-							'video',
-							'iframe[src*="youtube.com"]',
-							'iframe[src*="youtube-nocookie.com"]',
-							'iframe[src*="vimeo.com"]',
-							'iframe[src*="loom.com"]',
-							'iframe[src*="wistia.net"]',
-							'img[data-component-name^="Video"]',
-							'img[data-testid^="video-"]',
-						].join(',');
-						const videoEls = Array.from(container.querySelectorAll(videoSelector));
-						for (const el of videoEls) {
-							const url = resolveVideoUrl(el);
-							const target = outerVideoContainer(el);
-							if (!target.parentNode) continue;
-							if (options.videos === 'remove' || !url) {
-								target.remove();
-							} else {
-								const qrSvg = await QRCode.toString(url, {
-									type: 'svg',
-									errorCorrectionLevel: 'M',
-									margin: 1,
-									width: 128,
-								});
-								target.parentNode.replaceChild(buildQrReplacement(doc, qrSvg), target);
-							}
-						}
-					}
-
-					if (options.removeLinks === 'unwrap' || options.removeLinks === 'strip') {
-						for (const a of Array.from(container.querySelectorAll('a'))) {
-							if (options.removeLinks === 'strip') {
-								a.remove();
-							} else {
-								while (a.firstChild) a.parentNode?.insertBefore(a.firstChild, a);
-								a.remove();
-							}
-						}
-					}
-
-					article.content = container.innerHTML;
-					if (options.removeLinks === 'strip' || options.videos === 'remove') {
-						article.textContent = container.textContent ?? '';
-						article.length = article.textContent.length;
-					}
+				if (needsPostProcess(options) && article.content) {
+					const result = await runPostProcess(article.content, doc, {
+						unwrapImageTables: options.unwrapImageTables,
+						videos: options.videos,
+						removeLinks: options.removeLinks,
+					});
+					article.content = result.content;
+					article.textContent = result.textContent;
+					article.length = result.length;
 				}
 
 				const json: IDataObject = {
