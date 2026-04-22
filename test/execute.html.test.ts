@@ -20,12 +20,12 @@ describe('nodes/Readability/Readability.node.ts', () => {
 			expect(typeof out[0].json.content).toBe('string');
 		});
 
-		it('should use "about:blank" as url when baseUrl is empty', async () => {
+		it('should set url to null when baseUrl is empty', async () => {
 			const mock = createMockExecuteFunctions({
 				params: { inputSource: 'html', html: articleHtml, baseUrl: '', options: {} },
 			});
 			const [out] = await new Readability().execute.call(mock);
-			expect(out[0].json).toHaveProperty('url', 'about:blank');
+			expect(out[0].json).toHaveProperty('url', null);
 		});
 
 		it('should use provided baseUrl as url when set', async () => {

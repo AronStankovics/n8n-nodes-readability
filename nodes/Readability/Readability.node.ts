@@ -267,7 +267,7 @@ export class Readability implements INodeType {
 				virtualConsole.on('error', () => undefined);
 				virtualConsole.on('jsdomError', () => undefined);
 
-				const dom = new JSDOM(html, { url: documentUrl, virtualConsole });
+				const dom = new JSDOM(html, { url: documentUrl ?? 'about:blank', virtualConsole });
 				const doc = dom.window.document;
 
 				if (options.probablyReaderableOnly && !isProbablyReaderable(doc)) {

@@ -4,7 +4,9 @@ export type InputSource = 'url' | 'html' | 'binary';
 
 export interface LoadedDocument {
 	html: string;
-	url: string;
+	// null when the caller did not provide a source URL (HTML/binary without baseUrl).
+	// Consumers that need a concrete URL for DOM resolution should substitute 'about:blank'.
+	url: string | null;
 }
 
 export interface LoaderDefaults {
@@ -47,7 +49,7 @@ const loaders: Record<InputSource, Loader> = {
 	async html({ ctx, itemIndex }) {
 		const html = ctx.getNodeParameter('html', itemIndex) as string;
 		const baseUrl = ctx.getNodeParameter('baseUrl', itemIndex, '') as string;
-		return { html, url: baseUrl || 'about:blank' };
+		return { html, url: baseUrl || null };
 	},
 
 	async binary({ ctx, itemIndex, defaults }) {
@@ -58,7 +60,7 @@ const loaders: Record<InputSource, Loader> = {
 		) as string;
 		const baseUrl = ctx.getNodeParameter('baseUrl', itemIndex, '') as string;
 		const buffer = await ctx.helpers.getBinaryDataBuffer(itemIndex, property);
-		return { html: buffer.toString('utf-8'), url: baseUrl || 'about:blank' };
+		return { html: buffer.toString('utf-8'), url: baseUrl || null };
 	},
 };
 
