@@ -59,20 +59,35 @@ export async function processVideos(
 	mode: 'remove' | 'qr',
 ): Promise<void> {
 	const videoEls = container.querySelectorAll(VIDEO_SELECTOR);
+
+	const jobs: Array<{ url: string | null; target: Element }> = [];
 	for (const el of videoEls) {
-		const url = resolveVideoUrl(el);
 		const target = outerVideoContainer(el);
 		if (!target.parentNode) continue;
-		if (mode === 'remove' || !url) {
+		jobs.push({ url: resolveVideoUrl(el), target });
+	}
+
+	const qrSvgs = await Promise.all(
+		jobs.map((job) =>
+			mode === 'qr' && job.url
+				? QRCode.toString(job.url, {
+						type: 'svg',
+						errorCorrectionLevel: 'M',
+						margin: 1,
+						width: 128,
+					})
+				: Promise.resolve<string | null>(null),
+		),
+	);
+
+	for (let i = 0; i < jobs.length; i++) {
+		const { target } = jobs[i];
+		if (!target.parentNode) continue;
+		const qr = qrSvgs[i];
+		if (qr === null) {
 			target.remove();
 		} else {
-			const qrSvg = await QRCode.toString(url, {
-				type: 'svg',
-				errorCorrectionLevel: 'M',
-				margin: 1,
-				width: 128,
-			});
-			target.parentNode.replaceChild(buildQrReplacement(doc, qrSvg), target);
+			target.parentNode.replaceChild(buildQrReplacement(doc, qr), target);
 		}
 	}
 }
