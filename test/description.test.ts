@@ -5,7 +5,7 @@
 
 import { describe, it, expect } from 'vitest';
 
-import { Readability } from '../nodes/Readability/Readability.node';
+import { Readability, properties } from '../nodes/Readability/Readability.node';
 
 describe('nodes/Readability/Readability.node.ts', () => {
 	describe('description', () => {
@@ -18,6 +18,10 @@ describe('nodes/Readability/Readability.node.ts', () => {
 			expect(desc.version).toBe(1);
 			expect(desc.group).toEqual(['transform']);
 			expect(desc.usableAsTool).toBe(true);
+		});
+
+		it('should wire description.properties to the exported properties list', () => {
+			expect(desc.properties).toBe(properties);
 		});
 	});
 });
