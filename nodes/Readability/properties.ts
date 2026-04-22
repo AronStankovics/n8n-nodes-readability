@@ -1,9 +1,9 @@
 import type { INodeProperties } from 'n8n-workflow';
 
-const DEFAULT_USER_AGENT =
+export const DEFAULT_USER_AGENT =
 	'Mozilla/5.0 (compatible; n8n-nodes-reader-view/0.1; +https://github.com/AronStankovics/n8n-nodes-readability)';
-const DEFAULT_TIMEOUT_MS = 15000;
-const DEFAULT_BINARY_PROPERTY = 'data';
+export const DEFAULT_TIMEOUT_MS = 15000;
+export const DEFAULT_BINARY_PROPERTY = 'data';
 
 export const properties: INodeProperties[] = [
 	{
