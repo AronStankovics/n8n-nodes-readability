@@ -9,7 +9,7 @@ import {
 	buildQrReplacement,
 	outerVideoContainer,
 	resolveVideoUrl,
-} from '../nodes/Readability/Readability.node';
+} from '../nodes/Readability/post/videos';
 
 function makeDoc(bodyHtml: string = ''): Document {
 	return new JSDOM(`<!DOCTYPE html><html><body>${bodyHtml}</body></html>`).window.document;
