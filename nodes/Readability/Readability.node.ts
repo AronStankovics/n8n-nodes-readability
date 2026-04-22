@@ -13,6 +13,11 @@ import QRCode from 'qrcode';
 
 type InputSource = 'url' | 'html' | 'binary';
 
+const DEFAULT_USER_AGENT =
+	'Mozilla/5.0 (compatible; n8n-nodes-reader-view/0.1; +https://github.com/AronStankovics/n8n-nodes-readability)';
+const DEFAULT_TIMEOUT_MS = 15000;
+const DEFAULT_BINARY_PROPERTY = 'data';
+
 export function resolveVideoUrl(el: Element): string | null {
 	let anchor: Element | null = el.parentElement;
 	while (anchor && anchor.tagName !== 'A') anchor = anchor.parentElement;
@@ -139,7 +144,7 @@ export class Readability implements INodeType {
 				displayName: 'Input Binary Property',
 				name: 'inputBinaryProperty',
 				type: 'string',
-				default: 'data',
+				default: DEFAULT_BINARY_PROPERTY,
 				required: true,
 				description: 'Name of the binary property that holds the HTML',
 				displayOptions: { show: { inputSource: ['binary'] } },
@@ -221,7 +226,7 @@ export class Readability implements INodeType {
 						displayName: 'Request Timeout (Ms)',
 						name: 'timeoutMs',
 						type: 'number',
-						default: 15000,
+						default: DEFAULT_TIMEOUT_MS,
 						description: 'HTTP timeout when fetching a URL',
 					},
 					{
@@ -236,8 +241,7 @@ export class Readability implements INodeType {
 						displayName: 'User Agent',
 						name: 'userAgent',
 						type: 'string',
-						default:
-							'Mozilla/5.0 (compatible; n8n-nodes-reader-view/0.1; +https://github.com/AronStankovics/n8n-nodes-readability)',
+						default: DEFAULT_USER_AGENT,
 						description: 'User-Agent header sent when fetching a URL',
 					},
 					{
@@ -296,12 +300,10 @@ export class Readability implements INodeType {
 						method: 'GET',
 						url: documentUrl,
 						headers: {
-							'User-Agent':
-								options.userAgent ??
-								'Mozilla/5.0 (compatible; n8n-nodes-reader-view/0.1)',
+							'User-Agent': options.userAgent ?? DEFAULT_USER_AGENT,
 							Accept: 'text/html,application/xhtml+xml,*/*;q=0.8',
 						},
-						timeout: options.timeoutMs ?? 15000,
+						timeout: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
 						returnFullResponse: false,
 					});
 					html = typeof response === 'string' ? response : String(response);
@@ -314,6 +316,7 @@ export class Readability implements INodeType {
 						const inputBinaryProperty = this.getNodeParameter(
 							'inputBinaryProperty',
 							itemIndex,
+							DEFAULT_BINARY_PROPERTY,
 						) as string;
 						const buffer = await this.helpers.getBinaryDataBuffer(
 							itemIndex,
