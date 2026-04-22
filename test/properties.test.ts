@@ -61,7 +61,7 @@ describe('nodes/Readability/properties.ts', () => {
 				return anyO.name === 'removeLinks';
 			}) as { options?: Array<{ value?: string }> } | undefined;
 			const values = (removeLinks?.options ?? []).map((o) => o.value);
-			expect(values!.sort()).toEqual(['keep', 'strip', 'unwrap']);
+			expect(values.sort()).toEqual(['keep', 'strip', 'unwrap']);
 		});
 
 		it('should offer keep/remove/qr for videos', () => {
@@ -71,7 +71,7 @@ describe('nodes/Readability/properties.ts', () => {
 				return anyO.name === 'videos';
 			}) as { options?: Array<{ value?: string }> } | undefined;
 			const values = (videos?.options ?? []).map((o) => o.value);
-			expect(values!.sort()).toEqual(['keep', 'qr', 'remove']);
+			expect(values.sort()).toEqual(['keep', 'qr', 'remove']);
 		});
 	});
 });
