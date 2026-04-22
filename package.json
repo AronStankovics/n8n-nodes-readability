@@ -63,7 +63,6 @@
     "eslint": "10.2.1",
     "husky": "^9.1.7",
     "lint-staged": "^16.0.0",
-    "prettier": "3.8.1",
     "release-it": "20.0.0",
     "typescript": "6.0.3",
     "vitest": "^4.0.0"
