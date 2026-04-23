@@ -148,6 +148,14 @@ export const properties: INodeProperties[] = [
 				description: 'HTTP timeout when fetching a URL',
 			},
 			{
+				displayName: 'Strip Tracking Parameters',
+				name: 'stripTrackingParams',
+				type: 'boolean',
+				default: false,
+				description:
+					'Whether to remove known tracking query parameters (utm_*, fbclid, gclid, mc_eid, …) from anchor href attributes in the extracted HTML',
+			},
+			{
 				displayName: 'Unwrap Image Tables',
 				name: 'unwrapImageTables',
 				type: 'boolean',
