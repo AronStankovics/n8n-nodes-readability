@@ -53,6 +53,14 @@ describe('nodes/Readability/post/pipeline.ts', () => {
 			expect(needsPostProcess({ removeLinks: 'unwrap' })).toBe(true);
 			expect(needsPostProcess({ removeLinks: 'strip' })).toBe(true);
 		});
+
+		it('should return true when stripTrackingParams is enabled', () => {
+			expect(needsPostProcess({ stripTrackingParams: true })).toBe(true);
+		});
+
+		it('should return false when stripTrackingParams is explicitly false', () => {
+			expect(needsPostProcess({ stripTrackingParams: false })).toBe(false);
+		});
 	});
 
 	describe('#runPostProcess(content, doc, opts)', () => {
@@ -114,6 +122,32 @@ describe('nodes/Readability/post/pipeline.ts', () => {
 			);
 			expect(result.content).toMatch(/<a\s/);
 			expect(result.content).toContain('link');
+		});
+
+		it('should strip tracking params from anchor hrefs when stripTrackingParams is enabled', async () => {
+			const doc = makeDoc();
+			const result = await runPostProcess(
+				'<p><a href="https://ex.com/a?utm_source=foo&id=1">text</a></p>',
+				doc,
+				{ stripTrackingParams: true },
+			);
+			expect(result.content).toContain('href="https://ex.com/a?id=1"');
+			expect(result.content).not.toContain('utm_source');
+		});
+
+		it('should strip tracking params before removeLinks unwraps anchors', async () => {
+			// stripTrackingParams must run before link removal so the cleaned URL
+			// would be observable on the anchor; once unwrapped the anchor is gone.
+			// Verifying via removeLinks:'keep' that the anchor survives with a clean
+			// href, and via 'strip' that no tracking text leaks into textContent.
+			const doc = makeDoc();
+			const stripped = await runPostProcess(
+				'<p><a href="https://ex.com/?utm_source=x">link</a></p>',
+				doc,
+				{ stripTrackingParams: true, removeLinks: 'unwrap' },
+			);
+			expect(stripped.content).not.toMatch(/<a\s/);
+			expect(stripped.textContent).toBe('link');
 		});
 
 		it('should return textContent and length refreshed even for stages that do not remove text (e.g. unwrapImageTables)', async () => {

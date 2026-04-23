@@ -46,6 +46,7 @@ describe('nodes/Readability/properties.ts', () => {
 					'nbTopCandidates',
 					'probablyReaderableOnly',
 					'removeLinks',
+					'stripTrackingParams',
 					'timeoutMs',
 					'unwrapImageTables',
 					'userAgent',
@@ -62,6 +63,17 @@ describe('nodes/Readability/properties.ts', () => {
 			}) as { options?: Array<{ value?: string }> } | undefined;
 			const values = (removeLinks?.options ?? []).map((o) => o.value);
 			expect(values.sort()).toEqual(['keep', 'strip', 'unwrap']);
+		});
+
+		it('should expose stripTrackingParams as a boolean option defaulting to false', () => {
+			const options = findProperty('options')!.options ?? [];
+			const stripTrackingParams = options.find((o) => {
+				const anyO = o as { name?: string };
+				return anyO.name === 'stripTrackingParams';
+			}) as { type?: string; default?: unknown } | undefined;
+			expect(stripTrackingParams).toBeDefined();
+			expect(stripTrackingParams!.type).toBe('boolean');
+			expect(stripTrackingParams!.default).toBe(false);
 		});
 
 		it('should offer keep/remove/qr for videos', () => {
