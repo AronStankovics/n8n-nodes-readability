@@ -66,6 +66,7 @@ export class Readability implements INodeType {
 					nbTopCandidates?: number;
 					probablyReaderableOnly?: boolean;
 					removeLinks?: 'keep' | 'unwrap' | 'strip';
+					sanitize?: boolean;
 					unwrapImageTables?: boolean;
 					timeoutMs?: number;
 					userAgent?: string;
@@ -126,6 +127,7 @@ export class Readability implements INodeType {
 						unwrapImageTables: options.unwrapImageTables,
 						videos: options.videos,
 						removeLinks: options.removeLinks,
+						sanitize: options.sanitize,
 					});
 					article.content = result.content;
 					article.textContent = result.textContent;

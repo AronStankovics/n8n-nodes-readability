@@ -148,6 +148,14 @@ export const properties: INodeProperties[] = [
 				description: 'HTTP timeout when fetching a URL',
 			},
 			{
+				displayName: 'Sanitize HTML',
+				name: 'sanitize',
+				type: 'boolean',
+				default: false,
+				description:
+					'Whether to run the extracted HTML through DOMPurify. Useful when downstream renderers (email, Notion, webhooks) treat the content as trusted HTML.',
+			},
+			{
 				displayName: 'Unwrap Image Tables',
 				name: 'unwrapImageTables',
 				type: 'boolean',
