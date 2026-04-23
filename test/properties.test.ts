@@ -46,12 +46,24 @@ describe('nodes/Readability/properties.ts', () => {
 					'nbTopCandidates',
 					'probablyReaderableOnly',
 					'removeLinks',
+					'sanitize',
 					'timeoutMs',
 					'unwrapImageTables',
 					'userAgent',
 					'videos',
 				].sort(),
 			);
+		});
+
+		it('should expose sanitize as a boolean option defaulting to false', () => {
+			const options = findProperty('options')!.options ?? [];
+			const sanitize = options.find((o) => {
+				const anyO = o as { name?: string };
+				return anyO.name === 'sanitize';
+			}) as { type?: string; default?: unknown } | undefined;
+			expect(sanitize).toBeDefined();
+			expect(sanitize!.type).toBe('boolean');
+			expect(sanitize!.default).toBe(false);
 		});
 
 		it('should offer keep/unwrap/strip for removeLinks', () => {

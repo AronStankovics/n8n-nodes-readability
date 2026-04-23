@@ -53,6 +53,14 @@ describe('nodes/Readability/post/pipeline.ts', () => {
 			expect(needsPostProcess({ removeLinks: 'unwrap' })).toBe(true);
 			expect(needsPostProcess({ removeLinks: 'strip' })).toBe(true);
 		});
+
+		it('should return true when sanitize is enabled', () => {
+			expect(needsPostProcess({ sanitize: true })).toBe(true);
+		});
+
+		it('should return false when sanitize is explicitly false', () => {
+			expect(needsPostProcess({ sanitize: false })).toBe(false);
+		});
 	});
 
 	describe('#runPostProcess(content, doc, opts)', () => {
@@ -114,6 +122,48 @@ describe('nodes/Readability/post/pipeline.ts', () => {
 			);
 			expect(result.content).toMatch(/<a\s/);
 			expect(result.content).toContain('link');
+		});
+
+		it('should strip script tags when sanitize is enabled', async () => {
+			const doc = makeDoc();
+			const result = await runPostProcess(
+				'<p>hi</p><script>alert(1)</script>',
+				doc,
+				{ sanitize: true },
+			);
+			expect(result.content).not.toContain('<script');
+			expect(result.textContent).toBe('hi');
+			expect(result.length).toBe(result.textContent.length);
+		});
+
+		it('should run sanitize AFTER videos: qr so the QR SVG survives the pass', async () => {
+			const doc = makeDoc();
+			const result = await runPostProcess(
+				'<p><video src="https://cdn/a.mp4"></video></p>',
+				doc,
+				{ videos: 'qr', sanitize: true },
+			);
+			expect(result.content).toContain('class="qr-for-video"');
+			expect(result.content).toMatch(/<svg/);
+			expect(result.content).not.toContain('<video');
+		});
+
+		it('should strip inline event handlers when sanitize is enabled', async () => {
+			const doc = makeDoc();
+			const result = await runPostProcess(
+				'<a href="https://ex.com" onclick="alert(1)">x</a>',
+				doc,
+				{ sanitize: true },
+			);
+			expect(result.content).not.toMatch(/onclick/i);
+			expect(result.content).toMatch(/href="https:\/\/ex\.com"/);
+		});
+
+		it('should leave content unchanged when sanitize is false and no other stages are enabled', async () => {
+			const doc = makeDoc();
+			const before = '<p>hi</p><a href="https://ex.com">link</a>';
+			const result = await runPostProcess(before, doc, { sanitize: false });
+			expect(result.content).toBe(before);
 		});
 
 		it('should return textContent and length refreshed even for stages that do not remove text (e.g. unwrapImageTables)', async () => {

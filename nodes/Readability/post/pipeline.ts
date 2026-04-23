@@ -1,11 +1,13 @@
 import { unwrapImageTables } from './images';
 import { processLinks, type LinkMode } from './links';
+import { sanitize } from './sanitize';
 import { processVideos, type VideoMode } from './videos';
 
 export interface PipelineOptions {
 	unwrapImageTables?: boolean;
 	videos?: VideoMode;
 	removeLinks?: LinkMode;
+	sanitize?: boolean;
 }
 
 export interface PipelineResult {
@@ -18,7 +20,8 @@ export function needsPostProcess(opts: PipelineOptions): boolean {
 	return (
 		opts.unwrapImageTables === true ||
 		(opts.videos !== undefined && opts.videos !== 'keep') ||
-		(opts.removeLinks !== undefined && opts.removeLinks !== 'keep')
+		(opts.removeLinks !== undefined && opts.removeLinks !== 'keep') ||
+		opts.sanitize === true
 	);
 }
 
@@ -37,6 +40,7 @@ export async function runPostProcess(
 	if (opts.removeLinks && opts.removeLinks !== 'keep') {
 		processLinks(container, opts.removeLinks);
 	}
+	if (opts.sanitize) sanitize(container, doc);
 
 	const text = container.textContent ?? '';
 	return {

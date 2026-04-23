@@ -29,7 +29,7 @@ vi.mock('qrcode', () => {
 // Import after vi.mock so the hoisted mock applies.
 import { Readability } from '../nodes/Readability/Readability.node';
 import { createMockExecuteFunctions } from './mock-execute-functions';
-import { imageTableHtml, linksHtml, videoHtml } from './test-data';
+import { imageTableHtml, linksHtml, longParagraphs, videoHtml } from './test-data';
 
 async function runHtml(html: string, options: Record<string, unknown>, baseUrl = '') {
 	const mock = createMockExecuteFunctions({
@@ -143,6 +143,31 @@ describe('nodes/Readability/Readability.node.ts', () => {
 			it('should refresh textContent and length to match the stripped content', async () => {
 				const json = await runHtml(linksHtml, { removeLinks: 'strip' });
 				expect(typeof json.textContent).toBe('string');
+				expect(json.length).toBe((json.textContent as string).length);
+			});
+		});
+
+		describe('sanitize', () => {
+			const dirtyArticle = `<!DOCTYPE html><html><body><article><h1>T</h1>${longParagraphs(
+				4,
+			)}<p>See <a href="https://ex.com" onclick="alert(1)">link</a>.</p>${longParagraphs(
+				2,
+			)}</article></body></html>`;
+
+			it('should strip inline event handlers when sanitize is true', async () => {
+				const json = await runHtml(dirtyArticle, { sanitize: true });
+				expect(json.readable).toBe(true);
+				expect(json.content as string).not.toMatch(/onclick/i);
+				expect(json.content as string).toMatch(/href="https:\/\/ex\.com\/?"/);
+			});
+
+			it('should leave inline event handlers intact when sanitize is false', async () => {
+				const json = await runHtml(dirtyArticle, { sanitize: false });
+				expect(json.content as string).toMatch(/onclick/i);
+			});
+
+			it('should refresh textContent and length after sanitization', async () => {
+				const json = await runHtml(dirtyArticle, { sanitize: true });
 				expect(json.length).toBe((json.textContent as string).length);
 			});
 		});

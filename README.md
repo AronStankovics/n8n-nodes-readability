@@ -30,6 +30,7 @@ Community nodes on Cloud must go through n8n's verification process. See [Publis
 | Number of Top Candidates | 5 | How many candidate roots Readability ranks |
 | Probably Readable Only | false | Skip pages Readability thinks are unlikely articles |
 | Remove Links | `keep` | Post-process anchors: `keep` leaves them, `unwrap` removes `<a>` but keeps its text/children, `strip` removes the anchor and its content |
+| Sanitize HTML | false | Run the extracted HTML through DOMPurify. Strips `<script>`, inline event handlers, `javascript:` URLs, and other unsafe markup. Enable when downstream renders the HTML (email, Notion, webhooks). |
 | Unwrap Image Tables | false | Replace any `<table>` containing exactly one `<img>` with just the image. Fixes Substack and similar newsletter emails that wrap images in layout tables. |
 | Videos | `keep` | How to handle `<video>`, known-host `<iframe>`s, and newsletter video preview images. `remove` deletes them; `qr` replaces them with an inline SVG QR code of the video URL (handy for Kindle). |
 | Debug | false | Readability debug logging to stderr |
