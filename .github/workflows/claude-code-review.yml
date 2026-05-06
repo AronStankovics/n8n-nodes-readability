@@ -12,13 +12,9 @@ on:
 
 jobs:
   claude-review:
-    # Skip Renovate PRs. Renovate may run under the GitHub App
-    # (user.login == 'renovate[bot]') or under a personal/PAT account,
-    # in which case the only reliable signals are the branch prefix
-    # (renovate/*) and the labels Renovate applies.
+    # Skip Renovate PRs (matched by branch prefix and labels, since
+    # Renovate is run under a personal account here, not the GitHub App).
     if: |
-      github.event.pull_request.user.login != 'renovate[bot]' &&
-      github.event.pull_request.user.login != 'renovate-bot' &&
       !startsWith(github.event.pull_request.head.ref, 'renovate/') &&
       !contains(github.event.pull_request.labels.*.name, 'renovate') &&
       !contains(github.event.pull_request.labels.*.name, 'dependencies')
