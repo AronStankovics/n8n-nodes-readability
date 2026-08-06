@@ -147,6 +147,33 @@ describe('nodes/Readability/Readability.node.ts', () => {
 			});
 		});
 
+		describe('stripTrackingParams', () => {
+			it('should rewrite anchor hrefs to drop utm_* and known click ids', async () => {
+				const html = `<!DOCTYPE html><html><body><article><h1>T</h1>${
+					'<p>padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding.</p>'.repeat(
+						6,
+					)
+				}<p>See <a href="https://example.com/a?utm_source=newsletter&id=1">A</a> and <a href="https://example.com/b?fbclid=zzz">B</a>.</p></article></body></html>`;
+				const json = await runHtml(html, { stripTrackingParams: true });
+				const content = json.content as string;
+				expect(content).toContain('href="https://example.com/a?id=1"');
+				expect(content).toContain('href="https://example.com/b"');
+				expect(content).not.toContain('utm_source');
+				expect(content).not.toContain('fbclid');
+			});
+
+			it('should be a no-op when stripTrackingParams is disabled', async () => {
+				const html = `<!DOCTYPE html><html><body><article><h1>T</h1>${
+					'<p>padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding padding.</p>'.repeat(
+						6,
+					)
+				}<p>See <a href="https://example.com/a?utm_source=newsletter&id=1">A</a>.</p></article></body></html>`;
+				const json = await runHtml(html, {});
+				const content = json.content as string;
+				expect(content).toContain('utm_source=newsletter');
+			});
+		});
+
 		describe("combined videos:'remove' + removeLinks:'strip'", () => {
 			it('should apply both and report textContent/length reflecting both', async () => {
 				const json = await runHtml(videoHtml, {
