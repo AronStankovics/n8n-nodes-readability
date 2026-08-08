@@ -57,7 +57,7 @@
     "jsdom": "^29.0.0",
     "qrcode": "^1.5.4",
     "@vitest/coverage-v8": "^4.0.0",
-    "eslint": "10.7.0",
+    "eslint": "10.8.1",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.0",
     "release-it": "20.2.1",
