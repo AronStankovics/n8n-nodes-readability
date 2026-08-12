@@ -21,7 +21,7 @@
   "bugs": {
     "url": "https://github.com/AronStankovics/n8n-nodes-readability/issues"
   },
-  "engines": { "node": ">=20.15" },
+  "engines": { "node": "^22.22.2 || ^24.15.0 || >=26.0.0" },
   "scripts": {
     "build": "n8n-node build",
     "build:watch": "tsc --watch",
