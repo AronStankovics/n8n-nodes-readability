@@ -61,7 +61,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^17.0.0",
     "release-it": "21.0.2",
-    "typescript": "6.0.3",
+    "typescript": "7.0.2",
     "vitest": "^4.0.0"
   },
   "peerDependencies": { "n8n-workflow": "*" }
