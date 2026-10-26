@@ -1,11 +1,12 @@
 import { unwrapImageTables } from './images';
-import { processLinks, type LinkMode } from './links';
+import { processLinks, stripTrackingParams, type LinkMode } from './links';
 import { processVideos, type VideoMode } from './videos';
 
 export interface PipelineOptions {
 	unwrapImageTables?: boolean;
 	videos?: VideoMode;
 	removeLinks?: LinkMode;
+	stripTrackingParams?: boolean;
 }
 
 export interface PipelineResult {
@@ -17,6 +18,7 @@ export interface PipelineResult {
 export function needsPostProcess(opts: PipelineOptions): boolean {
 	return (
 		opts.unwrapImageTables === true ||
+		opts.stripTrackingParams === true ||
 		(opts.videos !== undefined && opts.videos !== 'keep') ||
 		(opts.removeLinks !== undefined && opts.removeLinks !== 'keep')
 	);
@@ -34,6 +36,7 @@ export async function runPostProcess(
 	if (opts.videos && opts.videos !== 'keep') {
 		await processVideos(container, doc, opts.videos);
 	}
+	if (opts.stripTrackingParams) stripTrackingParams(container);
 	if (opts.removeLinks && opts.removeLinks !== 'keep') {
 		processLinks(container, opts.removeLinks);
 	}
